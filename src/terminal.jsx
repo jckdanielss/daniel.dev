@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { PROJECTS } from "./data/projects.js";
-import { VIEWS_GET_URL } from "./lib/viewCounter.js";
 
 // ── static data ────────────────────────────────────────────────────────────
 
@@ -10,7 +9,7 @@ const SECTIONS = ["about", "stack", "skills", "work", "journey", "contact"];
 
 const CMD_NAMES = [
   "help", "whoami", "ls", "cat", "skills", "cd", "open",
-  "git", "neofetch", "theme", "matrix", "views", "sudo", "clear", "exit",
+  "git", "neofetch", "theme", "matrix", "sudo", "clear", "exit",
 ];
 
 const NF_LOGO = [
@@ -40,7 +39,7 @@ const NF_INFO = (theme) => [
 
 // ── command processor ─────────────────────────────────────────────────────
 
-function exec(raw, { theme, setTheme, onClose, onMatrix, onViews }) {
+function exec(raw, { theme, setTheme, onClose, onMatrix }) {
   const input = raw.trim();
   if (!input) return null;
 
@@ -61,12 +60,11 @@ function exec(raw, { theme, setTheme, onClose, onMatrix, onViews }) {
         { t: "plain", s: "│  cat <file>        read a file           │" },
         { t: "plain", s: "│  skills            tech capabilities     │" },
         { t: "plain", s: "│  cd <section>      scroll to section     │" },
-        { t: "plain", s: "│  open <1-4>        launch project        │" },
+        { t: "plain", s: "│  open <project>    open a case file      │" },
         { t: "plain", s: "│  git log           commit history        │" },
         { t: "plain", s: "│  neofetch          system info           │" },
         { t: "plain", s: "│  theme             toggle dark / light   │" },
         { t: "plain", s: "│  matrix            ???                   │" },
-        { t: "plain", s: "│  views             site view count       │" },
         { t: "plain", s: "│  clear             clear screen          │" },
         { t: "plain", s: "│  exit              close terminal        │" },
         { t: "dim",   s: "╰──────────────────────────────────────────╯" },
@@ -192,16 +190,19 @@ function exec(raw, { theme, setTheme, onClose, onMatrix, onViews }) {
     }
 
     case "open": {
-      const n    = parseInt(args, 10);
-      const proj = PROJECTS[n - 1];
+      const query = args.toLowerCase();
+      const aliases = { moto: "cavite-moto-tech", dc: "dc-transport", den: "den-portfolio", klori: "klori" };
+      const proj = PROJECTS.find((project, index) =>
+        String(index + 1) === query || project.slug === query || project.slug === aliases[query]
+      );
       if (proj) {
-        if (!proj.href) return [{ t: "warn", s: `${proj.title} — no public URL yet (mobile app in dev)` }];
-        setTimeout(() => window.open(proj.href, "_blank", "noopener,noreferrer"), 240);
-        return [{ t: "ok", s: `opening ${proj.title}…` }];
+        window.dispatchEvent(new CustomEvent("open-case-file", { detail: { slug: proj.slug } }));
+        setTimeout(onClose, 80);
+        return [{ t: "ok", s: `opening ${proj.title} case file…` }];
       }
       return [
         { t: "error", s: `open: '${args || "(none)"}' not found` },
-        { t: "dim",   s: `use: open 1…${PROJECTS.length}` },
+        { t: "dim",   s: "use: open moto | dc | den | klori" },
       ];
     }
 
@@ -248,10 +249,6 @@ function exec(raw, { theme, setTheme, onClose, onMatrix, onViews }) {
     case "matrix":
       setTimeout(onMatrix, 60);
       return [{ t: "ok", s: "follow the white rabbit…" }];
-
-    case "views":
-      onViews();
-      return [{ t: "dim", s: "pinging counter…" }];
 
     case "sudo":
       return [
@@ -501,17 +498,6 @@ function Terminal({ theme, setTheme }) {
         setMatrix(true);
         setInput("");
       },
-      onViews: () => {
-        fetch(VIEWS_GET_URL)
-          .then(r => r.json())
-          .then(d => pushLines([{ type: "output", data: [
-            { t: "accent", s: `${Number(d.value ?? 0).toLocaleString()} total visits` },
-            { t: "dim",    s: "counted since this counter was added — not retroactive." },
-          ] }]))
-          .catch(() => pushLines([{ type: "output", data: [
-            { t: "error", s: "couldn't reach the counter — try again in a bit." },
-          ] }]));
-      },
     });
 
     if (result === null)               { setLines(prev => [...prev, inputEntry]); setInput(""); return; }
@@ -570,14 +556,19 @@ function Terminal({ theme, setTheme }) {
           role="dialog"
           aria-label="Developer terminal"
         >
-          <div className="t-window" ref={windowRef} style={winStyle}>
+          <div className="t-window" ref={windowRef} style={winStyle} onKeyDown={(event) => {
+            if (event.key === "Tab") {
+              event.preventDefault();
+              inputRef.current?.focus();
+            }
+          }}>
 
             {/* title bar */}
             <div className="t-chrome" onMouseDown={startDrag}>
               <div className="t-dots">
-                <span className="t-dot t-dot-r" onClick={() => setOpen(false)} title="close"    />
-                <span className="t-dot t-dot-y" onClick={() => setOpen(false)} title="minimize" />
-                <span className="t-dot t-dot-g"                                title="full screen (nope)" />
+                <button type="button" className="t-dot t-dot-r" onClick={() => setOpen(false)} aria-label="Close terminal" />
+                <button type="button" className="t-dot t-dot-y" onClick={() => setOpen(false)} aria-label="Minimize terminal" />
+                <span className="t-dot t-dot-g" aria-hidden="true" />
               </div>
               <span className="t-chrome-title">marc@portfolio — terminal</span>
               <span className="t-chrome-right" />

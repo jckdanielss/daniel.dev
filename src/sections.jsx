@@ -1,10 +1,8 @@
 /* sections: hero, about, stack, projects, timeline, contact */
 
 import React, { useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { Icon, TechIcon } from "./icons.jsx";
-import { PROJECTS, shippedCount, liveCount } from "./data/projects.js";
-import { useViewCount } from "./lib/useViewCount.js";
+import { PROJECTS } from "./data/projects.js";
 
 /* ─── Reveal on scroll wrapper ─── */
 function Reveal({ children, delay = 0, as: As = "div", className = "", ...rest }) {
@@ -36,9 +34,9 @@ const NAV_LINKS = [
 ];
 
 function Nav({ theme, toggleTheme }) {
-  const views = useViewCount();
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 30);
     on();
@@ -66,16 +64,21 @@ function Nav({ theme, toggleTheme }) {
           </span>
           <span>marc-daniel.sys</span>
         </a>
-        <div className="nav-links">
+        <button
+          className="nav-menu"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? "close" : "menu"}
+        </button>
+        <div className={`nav-links${menuOpen ? " is-open" : ""}`} id="primary-navigation">
           {NAV_LINKS.map(([id, label]) => (
-            <a key={id} href={`#${id}`} className={active === id ? "active" : ""}>{label}</a>
+            <a key={id} href={`#${id}`} className={active === id ? "active" : ""} onClick={() => setMenuOpen(false)}>{label}</a>
           ))}
         </div>
         <div className="nav-status">
-          <span className="nav-live">
-            <span className="status-dot" aria-hidden="true"></span>
-            <span className="nav-views">{views == null ? "···" : views.toLocaleString()} views</span>
-          </span>
           <button
             className="theme-btn terminal-btn"
             data-cursor-hover
@@ -98,40 +101,23 @@ function Nav({ theme, toggleTheme }) {
 }
 
 /* ─── Hero ─── */
-function StatTile({ label, value, suffix = "" }) {
-  const mv = useMotionValue(0);
-  const rounded = useTransform(mv, (v) => Math.round(v).toLocaleString() + suffix);
-
-  useEffect(() => {
-    if (value == null) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) { mv.set(value); return; }
-    const controls = animate(mv, value, { duration: 0.8, ease: [0.16, 0.84, 0.28, 1] });
-    return () => controls.stop();
-  }, [value]);
-
+function FactTile({ label, children }) {
   return (
     <div className="status-tile">
       <span className="status-tile-label">{label}</span>
-      {value == null
-        ? <span className="status-tile-value">···</span>
-        : <motion.span className="status-tile-value">{rounded}</motion.span>}
+      <span className="status-tile-value">{children}</span>
     </div>
   );
 }
 
 function Hero() {
-  const views = useViewCount();
-
   return (
     <header className="hero" id="top">
       <div className="wrap hero-content">
         <Reveal className="status-panel">
           <div className="status-panel-head">
             <span className="status-panel-title">marc-daniel.sys</span>
-            <span className="status-panel-live">
-              <span className="status-dot" aria-hidden="true"></span>operational
-            </span>
+            <span className="status-panel-context">portfolio / systems work</span>
           </div>
 
           <div className="status-panel-body">
@@ -139,21 +125,21 @@ function Hero() {
               <h1>marc daniel dela cruz</h1>
               <p className="status-panel-role">full-stack developer · cavite, ph</p>
               <p className="status-panel-lead">
-                4th-year BSIT student building full-stack systems through thesis projects, client work, and a lot of late-night debugging. i like clean UX, practical features, and shipping things people can actually use.
+                I build booking, inventory, and route-pricing tools. My work runs from the data model through the interface and deploy.
               </p>
               <div className="status-panel-meta">
                 <div className="meta-block">
-                  <span className="k">status</span>
-                  <span className="v"><span className="status-dot" aria-hidden="true"></span>open for freelance · q3 2026</span>
+                  <span className="k">available</span>
+                  <span className="v">junior roles + freelance · q3 2026</span>
                 </div>
                 <div className="meta-block">
-                  <span className="k">uptime</span>
-                  <span className="v">since 2023</span>
+                  <span className="k">working since</span>
+                  <span className="v">2023</span>
                 </div>
               </div>
               <div className="hero-cta">
                 <a className="btn primary" href="#work" data-cursor-hover>
-                  see work <Icon.arrow className="arrow" width={14} height={14} />
+                  see case files <Icon.arrow className="arrow" width={14} height={14} />
                 </a>
                 <a className="btn ghost" href="#contact" data-cursor-hover>
                   <Icon.mail width={14} height={14} /> get in touch
@@ -165,9 +151,9 @@ function Hero() {
             </div>
 
             <div className="status-grid">
-              <StatTile label="views" value={views} />
-              <StatTile label="shipped" value={shippedCount} />
-              <StatTile label="live now" value={liveCount} />
+              <FactTile label="moto-tech">7 roles</FactTile>
+              <FactTile label="d.c. transport">27 route bands</FactTile>
+              <FactTile label="klori">mobile app</FactTile>
               <figure className="polaroid status-tile--photo" data-cursor-hover>
                 <img src="/pfp.jpg" alt="Marc Daniel portrait" className="hero-photo" />
                 <figcaption className="polaroid-cap">
@@ -204,13 +190,13 @@ function About() {
         <div className="about-grid">
           <Reveal className="about-text" delay={100}>
             <p>
-              I taught myself how to build things properly by breaking them first. School gave me the foundation  but the real growth came from thesis deadlines, actual clients, and the kind of pressure that makes you rewrite a feature at 2am because it <em>has</em> to work by morning.
+              I got serious about development when assignments became booking flows and dashboards that somebody had to use. School gave me the foundation. Client work and capstone deadlines taught me to trace the awkward paths before they turn into support messages.
             </p>
             <p>
-              If you work with me, you get someone who handles the full picture. I&rsquo;ve built an <strong>Integrated Management Platform for Motorcycle Shops that is scalable</strong>, a <strong>booking platform for a transport business</strong>, and smaller sites in between  each one shipped, live, and used by real people. I don&rsquo;t hand things off halfway. I do the schema, the API, the UI, and the deploy. The stuff clients notice without knowing why the button that feels right, the price that calculates correctly, the page that loads fast that&rsquo;s the part I care about most.
+              Cavite Moto-Tech Hub gave me the chance to model seven roles across bookings, inventory, service work, billing, and reporting. D.C. Transport pushed me into route rules, map pinning, OTP verification, and quotes. I handle the schema, API, interface, and deploy because those decisions shape each other.
             </p>
             <p>
-              When I&rsquo;m not shipping: I&rsquo;m probably 300 hours deep into a game I&rsquo;ve already finished, shuffling through playlists I&rsquo;ll never stop curating, or convincing myself that learning <span className="highlight">Blender</span> totally counts as work. BSIT 4th year. Based in Cavite. Runs on coffee and a questionable sleep schedule.
+              Outside code, I spend too long in games, reorganize playlists, and keep returning to <span className="highlight">Blender</span>. I am finishing BSIT at NCST and building from Cavite.
             </p>
           </Reveal>
 
@@ -326,9 +312,6 @@ function Stack() {
                 {g.items.map((it, i) => (
                   <div className="stack-chip" data-cursor-hover key={it.name}
                     style={{ transitionDelay: `${i * 20}ms` }}>
-                    <span className="stack-chip-active" aria-hidden="true">
-                      <span className="status-dot" />active
-                    </span>
                     <div className="icon"><TechIcon name={it.icon} /></div>
                     <div className="name">{it.name}</div>
                     <div className="cat">{it.cat}</div>
@@ -532,8 +515,78 @@ function GalleryIcon() {
 }
 
 /* ─── Projects ─── */
+function CaseFile({ project, onClose }) {
+  const openGallery = () => {
+    if (project.gallery) {
+      window.dispatchEvent(new CustomEvent("open-gallery", { detail: { slug: project.gallery } }));
+    }
+  };
+
+  return (
+    <article className="case-file" id={`case-${project.slug}`} aria-labelledby={`${project.slug}-case-title`}>
+      <header className="case-file-head">
+        <div>
+          <span className="case-file-label">case file</span>
+          <h3 id={`${project.slug}-case-title`}>{project.title}</h3>
+        </div>
+        <button type="button" className="case-file-close" onClick={onClose}>close</button>
+      </header>
+      <div className="case-file-grid">
+        <div className="case-file-notes">
+          <div>
+            <h4>Problem</h4>
+            <p>{project.caseFile.problem}</p>
+          </div>
+          <div>
+            <h4>Decisions</h4>
+            <ul>{project.caseFile.decisions.map((decision) => <li key={decision}>{decision}</li>)}</ul>
+          </div>
+          <div>
+            <h4>Result</h4>
+            <p>{project.caseFile.result}</p>
+          </div>
+          <p className="case-file-stack">{project.stack}</p>
+          <div className="case-file-actions">
+            {project.gallery && <button type="button" onClick={openGallery}>view all screens</button>}
+            {project.href && <a href={project.href} target="_blank" rel="noopener noreferrer">visit live site</a>}
+          </div>
+        </div>
+        {project.caseFile.screens && (
+          <div className={`case-file-screens${project.slug === "klori" ? " case-file-screens-mobile" : ""}`}>
+            {project.caseFile.screens.map((screen) => (
+              <button key={screen.src} type="button" onClick={openGallery} aria-label={`Open ${screen.alt} in gallery`}>
+                <img src={screen.src} alt={screen.alt} width={screen.width} height={screen.height} loading="lazy" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function Projects() {
-  const items = PROJECTS;
+  const [activeSlug, setActiveSlug] = useState(null);
+  const activeProject = PROJECTS.find((project) => project.slug === activeSlug);
+
+  const selectCaseFile = (slug, shouldScroll = false) => {
+    setActiveSlug(slug);
+    window.history.replaceState(null, "", `#case-${slug}`);
+    if (shouldScroll) window.setTimeout(() => document.getElementById(`case-${slug}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
+
+  const closeCaseFile = () => {
+    setActiveSlug(null);
+    window.history.replaceState(null, "", "#work");
+  };
+
+  useEffect(() => {
+    const slug = window.location.hash.replace("#case-", "");
+    if (PROJECTS.some((project) => project.slug === slug)) selectCaseFile(slug, true);
+    const openFromTerminal = (event) => selectCaseFile(event.detail.slug, true);
+    window.addEventListener("open-case-file", openFromTerminal);
+    return () => window.removeEventListener("open-case-file", openFromTerminal);
+  }, []);
 
   return (
     <section id="work">
@@ -541,58 +594,45 @@ function Projects() {
         <Reveal className="section-head">
           <div>
             <div className="section-num">04 — Work</div>
-            <h2 className="section-title">
-              Selected things I&rsquo;ve <span className="accent-word">actually shipped</span>.
-            </h2>
+            <h2 className="section-title">Projects with the <span className="accent-word">hard parts</span> included.</h2>
           </div>
-          <div className="right">
-            {items.length} projects.<br/>
-            live + revenue-touching.
-          </div>
+          <div className="right">Select a project<br/>to open its case file.</div>
         </Reveal>
 
         <Reveal>
           <div className="project-list">
-            {items.map((p, i) => {
-              const isGallery = Boolean(p.gallery);
-              const openGallery = () =>
-                window.dispatchEvent(new CustomEvent("open-gallery", { detail: { slug: p.gallery } }));
+            {PROJECTS.map((project) => {
+              const isActive = project.slug === activeSlug;
               return (
-                <a
-                  className={`project-row${isGallery ? " project-row--gallery" : ""}`}
-                  data-cursor-hover
-                  key={i}
-                  href={isGallery ? undefined : p.href}
-                  target={isGallery ? undefined : "_blank"}
-                  rel={isGallery ? undefined : "noopener noreferrer"}
-                  onClick={isGallery ? (e) => { e.preventDefault(); openGallery(); } : undefined}
-                  onMouseMove={(e) => {
-                    const row = e.currentTarget;
-                    const rect = row.getBoundingClientRect();
-                    const pv = row.querySelector(".preview");
-                    if (pv) {
-                      pv.style.left = (e.clientX - rect.left) + "px";
-                      pv.style.top  = (e.clientY - rect.top) + "px";
-                    }
-                  }}
-                >
-                  <span className={`status-pill${p.href ? " status-pill--live" : ""}`}>
-                    <span className="status-dot" aria-hidden="true"></span>
-                    <span className="status-pill-text">{p.href ? "live" : "in dev"}</span>
-                  </span>
-                  <span className="title">{p.title}</span>
-                  <div className="meta">
-                    <span className="desc" dangerouslySetInnerHTML={{ __html: p.desc }} />
-                    <span className="stack-used">{p.stack}</span>
-                  </div>
-                  <span className="year">{p.year}</span>
-                  <span className={`go${isGallery ? " go--gallery" : ""}`}>
-                    {isGallery ? <GalleryIcon /> : <Icon.arrow width={14} height={14} />}
-                  </span>
-                  <div className="preview">
-                    <ProjectArt kind={p.art} imgSrc={p.imgSrc} />
-                  </div>
-                </a>
+                <React.Fragment key={project.slug}>
+                  <button
+                    className={`project-row${isActive ? " is-active" : ""}`}
+                    type="button"
+                    data-cursor-hover
+                    aria-expanded={isActive}
+                    aria-controls={`case-${project.slug}`}
+                    onClick={() => isActive ? closeCaseFile() : selectCaseFile(project.slug)}
+                    onMouseMove={(event) => {
+                      const row = event.currentTarget;
+                      const rect = row.getBoundingClientRect();
+                      const preview = row.querySelector(".preview");
+                      if (preview) {
+                        preview.style.left = `${event.clientX - rect.left}px`;
+                        preview.style.top = `${event.clientY - rect.top}px`;
+                      }
+                    }}
+                  >
+                    <span className="title">{project.title}</span>
+                    <span className="meta">
+                      <span className="desc">{project.desc}</span>
+                      <span className="stack-used">{project.stack}</span>
+                    </span>
+                    <span className="year">{project.year}</span>
+                    <span className="go" aria-hidden="true"><Icon.arrow width={14} height={14} /></span>
+                    <div className="preview"><ProjectArt kind={project.art} imgSrc={project.imgSrc} /></div>
+                  </button>
+                  {isActive && <CaseFile project={project} onClose={closeCaseFile} />}
+                </React.Fragment>
               );
             })}
           </div>

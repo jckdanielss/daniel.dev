@@ -5,7 +5,6 @@ import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor } from "./
 import { Nav, Hero, About, Stack, TechSkills, Projects, Journey, Contact } from "./sections.jsx";
 import { Terminal } from "./terminal.jsx";
 import { Gallery } from "./gallery.jsx";
-import { VIEWS_HIT_URL } from "./lib/viewCounter.js";
 import "./styles.css";
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -153,11 +152,6 @@ function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  /* view counter — fire-and-forget hit, read back via terminal `views` command and the Nav/Hero live tiles */
-  useEffect(() => {
-    fetch(VIEWS_HIT_URL).catch(() => {});
-  }, []);
-
   /* accent swap — single CSS var, no gradient derivation needed */
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", t.accent);
@@ -165,18 +159,21 @@ function App() {
 
   return (
     <>
+      <a className="skip-link" href="#main-content">skip to main content</a>
       <CustomCursor />
       <SmoothScroll />
       <MagnetEffect />
       <ScrollProgress />
       <Nav theme={theme} toggleTheme={toggleTheme} />
-      <Hero />
-      <About />
-      <Stack />
-      <TechSkills />
-      <Projects />
-      <Journey />
-      <Contact />
+      <main id="main-content" tabIndex="-1">
+        <Hero />
+        <About />
+        <Stack />
+        <TechSkills />
+        <Projects />
+        <Journey />
+        <Contact />
+      </main>
 
       <Gallery />
       <Terminal theme={theme} setTheme={setTheme} />
